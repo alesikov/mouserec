@@ -1,0 +1,1 @@
+TRUNCATE mouserec.session;

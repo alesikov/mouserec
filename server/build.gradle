@@ -1,0 +1,75 @@
+plugins {
+    id 'java'
+    id 'idea'
+    id 'org.springframework.boot' version '2.5.4'
+}
+
+group 'website.the-most-awesome'
+version 'SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(16)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    lombokVersion = "1.18.20"
+    commonsLangVersion = "3.12.0"
+    bootVersion = "2.5.4"
+    springVersion = "5.3.9"
+    postgresR2dbcVersion = "0.8.8.RELEASE"
+    hikariCPVersion = '3.4.5'
+    postgresDriverVersion = "42.2.23"
+    flywayVersion = "7.15.0"
+    springKafkaVersion = '2.7.6'
+    reactorKafkaVersion = '1.3.5'
+    javaxWebsocketApiVersion = '1.1'
+
+    // tests
+    junitVersion = "5.7.2"
+    assertjVersion = "3.20.2"
+    testcontainersVersion = "1.16.0"
+    reactorTestVersion = "3.4.9"
+}
+
+test {
+    useJUnitPlatform()
+}
+
+dependencies {
+    implementation "org.projectlombok:lombok:$lombokVersion"
+    annotationProcessor "org.projectlombok:lombok:$lombokVersion"
+    implementation "org.apache.commons:commons-lang3:$commonsLangVersion"
+    implementation "org.springframework.boot:spring-boot-starter-webflux:$bootVersion"
+    implementation "org.springframework.boot:spring-boot-starter-data-r2dbc:$bootVersion"
+    implementation "org.springframework.kafka:spring-kafka:$springKafkaVersion"
+    implementation "io.projectreactor.kafka:reactor-kafka:$reactorKafkaVersion"
+    implementation "javax.websocket:javax.websocket-api:$javaxWebsocketApiVersion"
+    implementation 'org.springframework.session:spring-session-core:2.5.2'
+
+    implementation "org.flywaydb:flyway-core:$flywayVersion"
+    implementation("io.r2dbc:r2dbc-postgresql:$postgresR2dbcVersion") {
+        exclude group: 'io.projectreactor', module: 'reactor-core'
+        exclude group: 'io.projectreactor.netty', module: 'reactor-netty'
+    }
+    runtimeOnly "org.springframework.boot:spring-boot-starter-jdbc:$bootVersion"
+    runtimeOnly "org.postgresql:postgresql:$postgresDriverVersion"
+
+    // tests
+    testImplementation "org.springframework.boot:spring-boot-starter-test:$bootVersion"
+    testImplementation(platform ("org.junit:junit-bom:$junitVersion"))
+    testImplementation "org.junit.jupiter:junit-jupiter:$junitVersion"
+    testImplementation "org.testcontainers:testcontainers:$testcontainersVersion"
+    testImplementation "org.testcontainers:junit-jupiter:$testcontainersVersion"
+    testImplementation "org.testcontainers:postgresql:$testcontainersVersion"
+    testImplementation "org.testcontainers:r2dbc:$testcontainersVersion"
+    testImplementation "org.testcontainers:kafka:$testcontainersVersion"
+    testImplementation "io.projectreactor:reactor-test:$reactorTestVersion"
+    implementation "org.springframework.kafka:spring-kafka-test:$springKafkaVersion"
+    testImplementation "org.assertj:assertj-core:$assertjVersion"
+}

@@ -1,0 +1,146 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Mouse 🐭 recorder</title>
+    <style>
+        html, body {
+            overflow: hidden;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        #controls {
+            position: absolute;
+            left: 10px;
+            top: 10px;
+        }
+    </style>
+</head>
+<body>
+<canvas id="main"></canvas>
+<div id="controls">
+    <input id="start" type="button" value="Start"/>
+    <input id="stop" type="button" value="Stop" disabled="disabled"/>
+    <input id="replay" type="button" value="Replay" disabled="disabled"/>
+</div>
+<script>
+    let webSocket = new WebSocket("ws://server:9999/events")
+    let mousePos
+    let prevMousePos
+    let handle
+
+    let canvas = document.getElementById("main")
+    canvas.width = window.innerWidth
+    canvas.height = window.innerHeight
+
+    let ctx = canvas.getContext('2d')
+
+    function onMouseMove(event) {
+        let eventDoc, doc, body
+
+        if (event.pageX == null && event.clientX != null) {
+            eventDoc = (event.target && event.target.ownerDocument) || document
+            doc = eventDoc.documentElement
+            body = eventDoc.body
+
+            event.pageX = event.clientX +
+                (doc && doc.scrollLeft || body && body.scrollLeft || 0) -
+                (doc && doc.clientLeft || body && body.clientLeft || 0)
+            event.pageY = event.clientY +
+                (doc && doc.scrollTop  || body && body.scrollTop  || 0) -
+                (doc && doc.clientTop  || body && body.clientTop  || 0 )
+        }
+
+        mousePos = {
+            x: event.pageX, y: event.pageY
+        }
+    }
+
+    let duration = 100
+    let x = 10
+    let y = 10
+    let nextX, nextY;
+    let startTime;
+
+    function anim(time) {
+        if (!startTime)
+            startTime = time || performance.now()
+
+        let deltaTime = (time - startTime) / duration
+        let currentX = x + ((nextX - x) * deltaTime)
+        let currentY = y + ((nextY - y) * deltaTime)
+
+        if (deltaTime >= 1) {
+            x = nextX
+            y = nextY
+            startTime = null
+            draw(x, y)
+        } else {
+            draw(currentX, currentY)
+            requestAnimationFrame(anim)
+        }
+    }
+
+    function draw(x, y) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        ctx.beginPath()
+        ctx.arc(x, y, 5, 0, 2 * Math.PI)
+        ctx.fill()
+    }
+
+    webSocket.onmessage = function (event) {
+        let data = event.data
+        console.log(data)
+
+        if (data.startsWith("event")) {
+            let parts = data.split(" ")
+            nextX = +parts[1] || 0
+            nextY = +parts[2] || 0
+
+            anim()
+        }
+        if (data === "end") {
+            start.disabled = false
+            stop.disabled = replay.disabled = true
+        }
+    }
+
+    function traceMousePosition() {
+        if (prevMousePos !== mousePos) {
+            prevMousePos = mousePos
+            webSocket.send(`persist ${mousePos.x} ${mousePos.y}`)
+        }
+    }
+
+    function init() {
+        let start = document.getElementById("start")
+        let stop = document.getElementById("stop")
+        let replay = document.getElementById("replay")
+
+        start.onclick = function () {
+            webSocket.send("start")
+            document.addEventListener("mousemove", onMouseMove)
+            handle = setInterval(traceMousePosition, 100)
+            stop.disabled = false
+            replay.disabled = true
+        }
+
+        stop.onclick = function () {
+            webSocket.send("stop")
+            clearInterval(handle)
+            document.removeEventListener("mousemove", onMouseMove)
+            replay.disabled = false
+        }
+
+        replay.onclick = function () {
+            webSocket.send("replay")
+            start.disabled = stop.disabled = replay.disabled = true
+        }
+    }
+
+    init()
+</script>
+</body>
+</html>

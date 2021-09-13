@@ -1,0 +1,3 @@
+rootProject.name = 'mouserec'
+
+include ':client', ':server'

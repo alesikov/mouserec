@@ -1,0 +1,49 @@
+version: '3'
+
+services:
+  zookeeper:
+    image: 'confluentinc/cp-zookeeper:5.4.3'
+    container_name: zookeeper
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=2181
+      - ALLOW_ANONYMOUS_LOGIN=yes
+
+  kafka:
+    image: 'confluentinc/cp-kafka:5.4.3'
+    container_name: kafka
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS=1
+    depends_on:
+      - zookeeper
+
+  db:
+    image: postgres:12-alpine
+    env_file: .env
+    restart: always
+
+  server:
+    image: sqrrqw/mouserec:server
+    env_file: .env
+    build:
+      context: ./server
+    restart: always
+    depends_on:
+      - db
+      - kafka
+    ports:
+      - 9999:9999
+
+  client:
+    image: sqrrqw/mouserec:client
+    env_file: .env
+    build:
+      context: ./client
+    restart: always
+    depends_on:
+      - server
+    ports:
+      - 80:80
