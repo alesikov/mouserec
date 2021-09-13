@@ -1,0 +1,21 @@
+---
+
+server:
+  port: 9999
+
+spring:
+  flyway:
+    url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${spring.r2dbc.database}?currentSchema=${spring.r2dbc.database}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    schemas: ${spring.r2dbc.database}
+    locations: classpath:postgres/migrations
+
+  r2dbc:
+    url: r2dbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${spring.r2dbc.database}?currentSchema=${spring.r2dbc.database}
+    database: ${POSTGRES_DB:mouserec}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}

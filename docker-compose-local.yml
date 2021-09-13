@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+  db:
+    image: postgres:12-alpine
+    env_file: .env
+    restart: always
+
+  server:
+    image: sqrrqw/mouserec:server
+    env_file: .env
+    build:
+      context: ./server
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - 9999:9999
+
+  client:
+    image: sqrrqw/mouserec:client
+    env_file: .env
+    build:
+      context: ./client
+    restart: always
+    depends_on:
+      - server
+    ports:
+      - 80:80
